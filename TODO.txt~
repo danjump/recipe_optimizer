@@ -1,0 +1,23 @@
+TODO:
+
+1. 
+#COMPLETED:(no)
+*Create scraper to collect information
+ a) Start with allrecipes.com
+ b) Create database system with sqlite3 to store information
+    for each recipe
+    
+    PROPOSED TABLE CODE
+
+    CREATE TABLE recipe_website(
+    id INTEGER PRIMARY KEY,
+    website TEXT);
+    
+    CREATE TABLE recipes(
+    id INTEGER, 
+    product TEXT, 
+    ingredient TEXT);
+    
+*Formulate model
+ a) Figure out what information should be used in the model
+ b) Figure out what kind of model should be tested first

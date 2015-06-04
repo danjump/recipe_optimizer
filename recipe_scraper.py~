@@ -1,6 +1,5 @@
 import mechanize
-import cookielib
-from bs4 import BeautifulSoup
+import beautifulsoup4
 import re
 import os
 import sqlite3
