@@ -8,8 +8,6 @@ import sys
 import numpy
 import time
 import csv
-#functions from this file are called with allrecipes.funcname
-import "allrecipes"
 
 def main(args):
 
@@ -55,9 +53,9 @@ def read_search_results(search_results_page):
 
 def create_browser():
 	#currently the one I use, but it should work
-	user_agent="Opera/9.80 (Windows NT 6.1; Win64; x64) Presto/2.12.388 Version/12.16"
-
-	br=mechanize.Browser()
+	user_agent="Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:38.0) Gecko/20100101 Firefox/38.0"
+        
+        br=mechanize.Browser()
 	#makes br behave like a real browser
 	cj=cookielib.LWPCookieJar()
 	br.set_cookiejar(cj)
