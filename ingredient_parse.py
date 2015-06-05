@@ -114,7 +114,7 @@ def extract_quantity(text):
 	return [numb,rpattern[0][1],rpattern[1],text]
 	
 def extract_embellishment(text):
-	embellisher_search = re.search(', .*$',text)
+	embellisher_search = re.search(', [^,]*$',text)
 	if embellisher_search <> None:
 		embellish = embellisher_search.group(0)[2:]
 	else:
