@@ -1,9 +1,11 @@
+from recipe_scraper import *
+
 def get_rating(soup):
 	obj = soup.find_all('meta',{'itemprop':'ratingValue'})[0]
 	return float(obj.get('content'))
 
 def get_recipe_yield(soup):
-	obj = soup.find('span',{'id':'lblYield'))
+	obj = soup.find('span',{'id':'lblYield'})
 	return str(obj.text)
 
 def get_number_of_ratings(soup):
