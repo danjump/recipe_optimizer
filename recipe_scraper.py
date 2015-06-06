@@ -40,11 +40,67 @@ class timer:
 		return self.nresets
 	def get_time_remaining(self):
 		return self.prev_time + self.next_counter - time.time()
+	
+def write_info_to_database(info):
+	"""stores info extracted to pages to a sqlite database"""
+	conn = sqlite3.connect('recipes.db')
+	c = conn.cursor()
+	c.execute("""CREATE TABLE IF NOT EXISTS recipes(
+		recipe_id INTEGER PRIMARY KEY, 
+		search_query TEXT,
+		url TEXT,
+		website TEXT,
+		timestamp TEXT,
+		average_rating REAL,
+		number_ratings INTEGER,
+		yield_quantity REAL,
+		yield_units TEXT,
+		yield_type TEXT
+		);""")
+	c.execute("""CREATE TABLE IF NOT EXISTS ingredients(
+		recipe_id INTEGER,
+		name TEXT,
+		quantity REAL,
+		units TEXT,
+		unit_type TEXT,
+		embellisher TEXT
+		);""")
+	c.execute("""SELECT count(*) from recipes;""")
+	n = c.fetchall()[0][0]
+	#it is faster to execute all the commands as a single sql command
+	#than to use `c.execute_many` because of the minimum amount of time commands
+	#connections take to execute
+	recipelist = []
+	ingredientlist = []
+	for key in info:
+		entry = info[key]
+		url = key
+		website = re.search('(?<=http://).+?(?=/)',url).group(0)
+		ingparse = ingredient_parse.parse_ingredient(entry['yield'])
+		recipelist.append([n,entry['query'],url,website,
+		     entry['timestamp'],entry['rating'],entry['votes'],
+		     float(ingparse[0][0]),ingparse[0][1],ingparse[0][2]])
+		ingredients = entry['ingredients_parsed']
+		for ing in ingredients:
+			ingredientlist.append([n,ing[0][3],ing[0][0],
+			  ing[0][1],ing[0][2],ing[1]])
+		n+=1
+	c.executemany("""INSERT INTO recipes VALUES(?,?,?,?,?,?,?,?,?,?);""",
+	       recipelist)
+	c.executemany("""INSERT INTO ingredients VALUES(?,?,?,?,?,?);""",
+	       ingredientlist)
+	c.execute("""SELECT COUNT(*) FROM recipes""")
+	nrecipes = c.fetchall()[0][0]
+	c.execute("""SELECT COUNT(*) FROM ingredients""")
+	ningredients = c.fetchall()[0][0]
+	print "TOTAL RECIPES: " + str(nrecipes)
+	print "TOTAL INGREDIENTS: " + str(ningredients)
+	
 
 def main(args):
-
+	query = 'hummus'
         #Set our allrecipes search result url. in this case we are searching for hummus recipes
-        search_results_url='http://allrecipes.com/search/default.aspx?qt=k&wt=hummus&rt=r&origin=Home%20Page'
+        search_results_url='http://allrecipes.com/search/default.aspx?qt=k&wt='+query+'&rt=r&origin=Home%20Page'
         #create browser
 	br=create_browser()
 
@@ -52,7 +108,7 @@ def main(args):
         results_list = read_search_results(search_results_url,br)
 
         #read info from all the recipe pages in to a dict
-        recipe_info_dict = read_recipe_pages(results_list,br)
+        recipe_info_dict = read_recipe_pages(results_list,br,query)
 
         
 def read_search_results(search_results_url,br):
@@ -85,7 +141,7 @@ def read_search_results(search_results_url,br):
         return results_list
         
         
-def read_recipe_pages(results_list,br):
+def read_recipe_pages(results_list,br,query):
         """
         input: list of recipe urls
         output: dictionary of dictionaries of info for each recipe
@@ -93,6 +149,7 @@ def read_recipe_pages(results_list,br):
         info = dict()
         for url in results_list:
                 info[str(url)] = read_recipe_page(url,br)
+                info[str(url)]['query'] = query
 
         return info
 
@@ -112,7 +169,9 @@ def read_recipe_page(url,br):
         info['rating'] = allrecipes.get_rating(soup)
         info['votes'] = allrecipes.get_number_of_ratings(soup)
         info['yield'] = allrecipes.get_recipe_yield(soup)
-
+	info['ingredients_raw'] = allrecipes.get_ingredients(soup)
+	info['ingredients_parsed'] = [ingredient_parse.parse_ingredient(x) for x in [' '.join(str(z)) for z in info['ingredients_raw']]]
+        info['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
         return info
 
 

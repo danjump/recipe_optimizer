@@ -24,7 +24,7 @@ measures_by_volume = ['tablespoon','teaspoon','cup','quart','gallon',
 		      'liter','milliliter','pinch','dash','pint','dessertspoon',
 		      'drop','fluid ounce']
 measures_by_quantity = ['clove','head','stalk','can','tin','container','box','slice','patty',
-			'carton','stick','bottle']
+			'carton','stick','bottle','serving']
 
 measures_list = [measures_by_weight,measures_by_volume,measures_by_quantity]
 

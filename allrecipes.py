@@ -14,3 +14,11 @@ def get_number_of_ratings(soup):
 	text = re.sub('[^0-9]+','',text)
 	val = int(text)
 	return val
+
+def get_ingredients(soup):
+	ingredients = soup.find_all('li',{'id':'liIngredient'})
+	amounts = [obj.find('span',{'class':'ingredient-amount'}) for obj in ingredients]
+	names = [obj.find('span',{'class':'ingredient-name'}) for obj in ingredients]
+	nIngredients = len(amounts)
+	ipairs = [[str(amounts[i].text),str(names[i].text)] for i in range(nIngredients)]
+	return ipairs
