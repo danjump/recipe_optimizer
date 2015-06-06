@@ -28,7 +28,9 @@ measures_by_quantity = ['clove','head','stalk','can','tin','container','box','sl
 
 measures_list = [measures_by_weight,measures_by_volume,measures_by_quantity]
 
-numeral_regex = r'[0-9\.]+ ?/?[0-9]*/?[0-9]*'
+#XXXX debug solution for hyphenated quantities
+#e.g., 4 10-inch tortillas
+numeral_regex = r'[0-9\.]+ ?/?[0-9]*/?[0-9]*(?=XXXX)?'
 
 def rfind(regex,text):
 	"""faster version of verifying matches"""
@@ -70,6 +72,7 @@ def try_regexes_nested(part1,part2list,part3,text,return_vals):
 def fraction_to_decimal(text):
 	"""takes both regular and mixed fractions and converts them to float values"""
 	if rfind(' ',text):
+		print text
 		splittext = text.split(' ')
 		return float(splittext[0]) + float(fraction_to_decimal(splittext[1]))
 	splittext = text.split('/')
@@ -99,6 +102,7 @@ def extract_quantity(text):
 	nump= re.search(numeral_regex,text)
 	if nump == None:
 		print 'cannot find quantity for: ' + text
+		text = re.sub('.*XXXX','',text)
 		return [1.,'err','raw',text]
 	numb = nump.group(0)
 	if rfind('/',numb):
@@ -107,10 +111,12 @@ def extract_quantity(text):
 		numb = float(numb)
 	if rpattern[0] == None:
 		text = re.sub('^ ?','',text)
+		text = re.sub('.*XXXX','',text)
 		return [numb,'raw','raw',text]
 	else:
 		text = re.sub(rpattern[0][0] + rpattern[0][1] + rpattern[0][2] + ' ?','',text)
 		text = re.sub('[^a-zA-Z \-]+','',text)
+	text = re.sub('.*XXXX','',text)
 	return [numb,rpattern[0][1],rpattern[1],text]
 	
 def extract_embellishment(text):
@@ -123,6 +129,7 @@ def extract_embellishment(text):
 	
 
 def parse_ingredient(text):
+	#print "TEXT: " + text
 	embellishment = extract_embellishment(text)
 	text = preprocess_quantity(text)
 	quantities_data = extract_quantity(text)

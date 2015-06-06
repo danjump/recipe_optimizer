@@ -9,13 +9,14 @@ import numpy
 import time
 import csv
 import allrecipes
+import ingredient_parse
 
 class timer:
 	"""this class creates a timer object
 	that can be used to determine how frequently to scan something"""
 	def generate_random_time(self):
 		return self.floor + min(numpy.random.lognormal(self.mean,self.sd,1)[0],self.ceiling)
-	def __init__(self,mean = 0.976,sd = 0.31,floor = 0.114014,ceiling = 4.807):
+	def __init__(self,mean = 0.526,sd = 0.29,floor = 0.104014,ceiling = 4.307):
 		self.origin = time.time()
 		self.floor = floor
 		self.mean = mean
@@ -45,6 +46,7 @@ def write_info_to_database(info):
 	"""stores info extracted to pages to a sqlite database"""
 	conn = sqlite3.connect('recipes.db')
 	c = conn.cursor()
+	c.execute("""BEGIN;""")
 	c.execute("""CREATE TABLE IF NOT EXISTS recipes(
 		recipe_id INTEGER PRIMARY KEY, 
 		search_query TEXT,
@@ -93,8 +95,11 @@ def write_info_to_database(info):
 	nrecipes = c.fetchall()[0][0]
 	c.execute("""SELECT COUNT(*) FROM ingredients""")
 	ningredients = c.fetchall()[0][0]
+	c.execute("COMMIT;")
 	print "TOTAL RECIPES: " + str(nrecipes)
 	print "TOTAL INGREDIENTS: " + str(ningredients)
+	c.close()
+	conn.close()
 	
 
 def main(args):
@@ -109,6 +114,7 @@ def main(args):
 
         #read info from all the recipe pages in to a dict
         recipe_info_dict = read_recipe_pages(results_list,br,query)
+        write_info_to_database(recipe_info_dict)
 
         
 def read_search_results(search_results_url,br):
@@ -126,6 +132,7 @@ def read_search_results(search_results_url,br):
                 url=search_results_url+"&Page="+str(i)
                 #Open the page and get the html content:
                 html = br.open(url).read()
+                print "READING: " + url
                 time.sleep(numpy.random.lognormal(1,1,1))
                 #feed in to beautifulsoup
                 soup = BeautifulSoup(html)
@@ -148,6 +155,7 @@ def read_recipe_pages(results_list,br,query):
         """
         info = dict()
         for url in results_list:
+		print 'READING URL: ' + url
                 info[str(url)] = read_recipe_page(url,br)
                 info[str(url)]['query'] = query
 
@@ -170,7 +178,7 @@ def read_recipe_page(url,br):
         info['votes'] = allrecipes.get_number_of_ratings(soup)
         info['yield'] = allrecipes.get_recipe_yield(soup)
 	info['ingredients_raw'] = allrecipes.get_ingredients(soup)
-	info['ingredients_parsed'] = [ingredient_parse.parse_ingredient(x) for x in [' '.join(str(z)) for z in info['ingredients_raw']]]
+	info['ingredients_parsed'] = [ingredient_parse.parse_ingredient(x) for x in ['XXXX'.join([str(q) for q in z]) for z in info['ingredients_raw']]]
         info['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
         return info
 
