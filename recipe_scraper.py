@@ -114,6 +114,7 @@ def main(args):
 
         #read info from all the recipe pages in to a dict
         recipe_info_dict = read_recipe_pages(results_list,br,query)
+
         write_info_to_database(recipe_info_dict)
 
         
@@ -127,12 +128,13 @@ def read_search_results(search_results_url,br):
         """
         
         #loop through a known 5 pages of search results
+        npages=5
         results_list=[]
-        for i in range(1,6):
+        for i in range(1,npages+1):
                 url=search_results_url+"&Page="+str(i)
                 #Open the page and get the html content:
                 html = br.open(url).read()
-                print "READING: " + url
+                print "Reading Search Results Page #"+str(i)+" of "+str(npages)+":\n" + url
                 time.sleep(numpy.random.lognormal(1,1,1))
                 #feed in to beautifulsoup
                 soup = BeautifulSoup(html)
@@ -145,6 +147,7 @@ def read_search_results(search_results_url,br):
                         full_url='http://allrecipes.com'+url_suffix
                         results_list.append(full_url)
 
+        print('\nFinished reading search results! Found '+str(len(results_list))+' recipes\n\n')
         return results_list
         
         
@@ -154,8 +157,11 @@ def read_recipe_pages(results_list,br,query):
         output: dictionary of dictionaries of info for each recipe
         """
         info = dict()
+        count=1
         for url in results_list:
-		print 'READING URL: ' + url
+                print 'Reading recipe '+str(count)+' of '+str(len(results_list))
+                count+=1
+		print 'URL: ' + url
                 info[str(url)] = read_recipe_page(url,br)
                 info[str(url)]['query'] = query
 
@@ -174,12 +180,15 @@ def read_recipe_page(url,br):
         soup = BeautifulSoup(html)
         
         info = dict()
+        #set entries with one value:
         info['rating'] = allrecipes.get_rating(soup)
         info['votes'] = allrecipes.get_number_of_ratings(soup)
         info['yield'] = allrecipes.get_recipe_yield(soup)
-	info['ingredients_raw'] = allrecipes.get_ingredients(soup)
-	info['ingredients_parsed'] = [ingredient_parse.parse_ingredient(x) for x in ['XXXX'.join([str(q) for q in z]) for z in info['ingredients_raw']]]
         info['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
+	#this entry points to a sub dict with entries for each ingredient
+        #which in turn points to a sub dict that has a 'name' and 'amount'
+        #entry for each ingredient:
+        info['ingredients'] = allrecipes.generate_ingredients_dict(soup)
         return info
 
 

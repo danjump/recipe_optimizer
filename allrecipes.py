@@ -24,17 +24,26 @@ def get_index_or_none(obj,i):
 	else:
 		return str(removeNonAscii(obj[i].text))
 
-def get_ingredients(soup):
-	ingredients = soup.find_all('li',{'id':'liIngredient'})
-	amounts = [obj.find('span',{'class':'ingredient-amount'}) for obj in ingredients]
-	names = [obj.find('span',{'class':'ingredient-name'}) for obj in ingredients]
-	nIngredients = len(amounts)
-	try:
-		ipairs = [[get_index_or_none(amounts,i),get_index_or_none(names,i)] for i in range(nIngredients)]
-	except AttributeError:
-		print ingredients
-		print '+++'
-		print amounts
-		print names
-		raise
-	return ipairs
+def generate_ingredients_dict(soup):
+	ingredient_frame = soup.find_all('li',{'id':'liIngredient'})
+ 
+        #this will be a dictionary with entries that are dictionaries.
+        #the sub-dictionaries will have entries for the description and
+        #amount of each ingredient
+        ingredients = dict()
+
+        #loop though each ingredient in the recipe
+        for obj in ingredient_frame:
+                ingredient = dict()
+
+                #this is an index value used by allrecipes.com for each ingredient
+                ingredient_index = int(obj.get('data-ingredientid'))
+	        description = removeNonAscii(obj.find('span',{'class':'ingredient-name'}).text)
+                amount = float(obj.get('data-grams'))
+
+                ingredient['description'] = name
+                ingredient['amount'] = amount
+
+                ingredients[ingredient_index] = ingredient
+	
+        return ingredients
