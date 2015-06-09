@@ -95,7 +95,7 @@ def read_search_results(search_results_url,br):
         """
         
         #loop through a known 5 pages of search results
-        npages=1
+        npages=5
         results_list=[]
         for i in range(1,npages+1):
                 url=search_results_url+"&Page="+str(i)
