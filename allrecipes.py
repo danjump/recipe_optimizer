@@ -41,7 +41,7 @@ def generate_ingredients_dict(soup):
 	        description = removeNonAscii(obj.find('span',{'class':'ingredient-name'}).text)
                 amount = float(obj.get('data-grams'))
 
-                ingredient['description'] = name
+                ingredient['description'] = description
                 ingredient['amount'] = amount
 
                 ingredients[ingredient_index] = ingredient
