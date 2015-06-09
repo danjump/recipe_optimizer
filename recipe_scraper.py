@@ -95,7 +95,7 @@ def read_search_results(search_results_url,br):
         """
         
         #loop through a known 5 pages of search results
-        npages=5
+        npages=1
         results_list=[]
         for i in range(1,npages+1):
                 url=search_results_url+"&Page="+str(i)
@@ -162,7 +162,6 @@ def write_info_to_database(info):
 	"""stores info extracted to pages to a sqlite database"""
 	conn = sqlite3.connect('recipes.db')
 	c = conn.cursor()
-	c.execute("""BEGIN;""")
 	c.execute("""CREATE TABLE IF NOT EXISTS recipes(
 		recipe_id INTEGER PRIMARY KEY, 
 		search_query TEXT,
@@ -204,6 +203,7 @@ def write_info_to_database(info):
 			ingredientlist.append([n,ing_id,ing['description'],
 			  ing['amount']])
 		n+=1
+	
 	c.executemany("""INSERT INTO recipes VALUES(?,?,?,?,?,?,?,?,?,?);""",
 	       recipelist)
 	c.executemany("""INSERT INTO ingredients VALUES(?,?,?,?);""",
@@ -212,7 +212,7 @@ def write_info_to_database(info):
 	nrecipes = c.fetchall()[0][0]
 	c.execute("""SELECT COUNT(*) FROM ingredients""")
 	ningredients = c.fetchall()[0][0]
-	c.execute("COMMIT;")
+	conn.commit()
 	print "TOTAL RECIPES: " + str(nrecipes)
 	print "TOTAL INGREDIENTS: " + str(ningredients)
 	c.close()
