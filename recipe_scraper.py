@@ -197,7 +197,7 @@ def write_info_to_database(info):
 		url = key
 		if url in url_list:
 			print "AVOIDING DUPLICATE URL: " + url
-			next
+			continue
 		website = re.search('(?<=http://).+?(?=/)',url).group(0)
 		ingparse = ingredient_parse.parse_ingredient(entry['yield'])
 		recipelist.append([n,entry['query'],url,website,
@@ -211,11 +211,11 @@ def write_info_to_database(info):
 			ingredientlist.append([n,ing_id,ing['description'],
 			  ing['amount']])
 		n+=1
-	
-	c.executemany("""INSERT INTO recipes VALUES(?,?,?,?,?,?,?,?,?,?);""",
-	       recipelist)
-	c.executemany("""INSERT INTO ingredients VALUES(?,?,?,?);""",
-	       ingredientlist)
+	if len(recipelist) > 0:
+		c.executemany("""INSERT INTO recipes VALUES(?,?,?,?,?,?,?,?,?,?);""",
+		recipelist)
+		c.executemany("""INSERT INTO ingredients VALUES(?,?,?,?);""",
+		ingredientlist)
 	c.execute("""SELECT COUNT(*) FROM recipes""")
 	nrecipes = c.fetchall()[0][0]
 	c.execute("""SELECT COUNT(*) FROM ingredients""")
