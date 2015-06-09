@@ -163,7 +163,7 @@ def write_info_to_database(info):
 	conn = sqlite3.connect('recipes.db')
 	c = conn.cursor()
 	c.execute("""CREATE TABLE IF NOT EXISTS recipes(
-		recipe_id INTEGER PRIMARY KEY, 
+		recipe_id INTEGER, 
 		search_query TEXT,
 		url TEXT,
 		website TEXT,
@@ -172,7 +172,8 @@ def write_info_to_database(info):
 		number_ratings INTEGER,
 		yield_quantity REAL,
 		yield_units TEXT,
-		yield_type TEXT
+		yield_type TEXT,
+		PRIMARY KEY (recipe_id,url)
 		);""")
 	c.execute("""CREATE TABLE IF NOT EXISTS ingredients(
 		recipe_id INTEGER,
@@ -182,6 +183,10 @@ def write_info_to_database(info):
 		);""")
 	c.execute("""SELECT count(*) from recipes;""")
 	n = c.fetchall()[0][0]
+	#avoids duplicate urls from being added
+	c.execute("""SELECT url from recipes;""")
+	url_list = c.fetchall()
+	url_list = [x[0] for x in url_list]
 	#it is faster to execute all the commands as a single sql command
 	#than to use `c.execute_many` because of the minimum amount of time commands
 	#connections take to execute
@@ -190,6 +195,9 @@ def write_info_to_database(info):
 	for key in info:
 		entry = info[key]
 		url = key
+		if url in url_list:
+			print "AVOIDING DUPLICATE URL: " + url
+			next
 		website = re.search('(?<=http://).+?(?=/)',url).group(0)
 		ingparse = ingredient_parse.parse_ingredient(entry['yield'])
 		recipelist.append([n,entry['query'],url,website,
