@@ -4,7 +4,7 @@ from recipe_scraper import *
 #&oq=site%3Aallrecipes.com+%22chicken+salad%22
 
 class google_search:
-	page_max = 10
+	page_max = 100
 	def __init__(self,website,query,browser):
 		self.base_url = google_search_url(website,query)
 		self.url = self.base_url
@@ -16,8 +16,13 @@ class google_search:
 		self.browser = browser
 		self.open_url()
 		self.terminated = False
+	def get_info(self):
+		print "Page: " + str(self.page_number)
+		print "Location: " + str(self.point_on_page)
 	def can_continue(self):
 		return not self.terminated
+	def at_page_limit(self):
+		return self.point_on_page == google_search.page_max
 	def open_url(self):
 		page = self.browser.open(self.url)
 		html = page.read()
@@ -34,14 +39,14 @@ class google_search:
 	def move_cursor(self):
 		if not self.terminated:
 			self.n += 1
-		if self.point_on_page == google_search.page_max:
+		if self.at_page_limit():
 			last_check = self.check_if_end()
 			if last_check:
 				self.terminated = True
 			else:
 				self.page_number += 1
 				self.point_on_page = 1
-				self.url = self.base_url + '&start=' + str(10*(self.page_number-1))
+				self.url = self.base_url + '&start=' + str(google_search.page_max*(self.page_number-1))
 				self.open_url()
 		elif self.check_page_position():
 			self.point_on_page += 1
@@ -69,4 +74,4 @@ def sptp(query):
 
 def google_search_url(website,query):
 	query = sptp(query)
-	return 'http://www.google.com/search?q=site:' + website + '+"' + query + '"'
+	return 'http://www.google.com/search?q=site:' + website + '+"' + query + '"' + '&num=100'

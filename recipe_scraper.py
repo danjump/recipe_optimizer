@@ -10,13 +10,16 @@ import time
 import csv
 import allrecipes
 import ingredient_parse
+import google_search
+
+MAX_SEARCH_ENTRIES = 500
 
 class timer:
 	"""this class creates a timer object
 	that can be used to determine how frequently to scan something"""
 	def generate_random_time(self):
 		return self.floor + min(numpy.random.lognormal(self.mean,self.sd,1)[0],self.ceiling)
-	def __init__(self,mean = 0.526,sd = 0.29,floor = 0.104014,ceiling = 4.307):
+	def __init__(self,mean = 0.976,sd = 0.29,floor = 0.704014,ceiling = 4.307):
 		self.origin = time.time()
 		self.floor = floor
 		self.mean = mean
@@ -43,15 +46,31 @@ class timer:
 		return self.prev_time + self.next_counter - time.time()
 	
 def main(args):
-	query = 'hummus'
+	#these will be default until command-line arguments are supported
+	query = 'chicken'
+	website = 'allrecipes.com'
         #Set our allrecipes search result url. in this case we are searching for hummus recipes
         search_results_url='http://allrecipes.com/search/default.aspx?qt=k&wt='+query+'&rt=r&origin=Home%20Page'
         #create browser
 	br=create_browser()
-
+	
+	gs = google_search.google_search(website,query,br)
+	#slower timer because google actually detects bots more easily
+	main_timer = timer(mean = 3.23,sd = 0.63, floor = 18.12, ceiling = 62)
+	results_list = []
+	while True:
+		results_list.append(gs.get_current_entry())
+		if gs.at_page_limit():
+			gs.get_info()
+			while main_timer.check_time():
+				pass
+			print 'continuing...'
+		if not gs.can_continue() or len(results_list) == MAX_SEARCH_ENTRIES:
+			break
         #get list of recipe url's from search results
-        results_list = read_search_results(search_results_url,br)
-
+        if False:
+		results_list = read_search_results(search_results_url,br)
+	print "READING INFO FROM RECIPE PAGES"
         #read info from all the recipe pages in to a dict
         recipe_info_dict = read_recipe_pages(results_list,br,query)
 
@@ -64,8 +83,8 @@ def create_browser():
         output: mechanize browser object
         """
 	#currently the one I use, but it should work
-	user_agent="Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:38.0) Gecko/20100101 Firefox/38.0"
-        
+	#user_agent="Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:38.0) Gecko/20100101 Firefox/38.0"
+        user_agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/41.0.2272.76 Chrome/41.0.2272.76 Safari/537.36"
         br=mechanize.Browser()
 	#makes br behave like a real browser
 	cj=cookielib.LWPCookieJar()
@@ -85,6 +104,8 @@ def create_browser():
 	return br
 
 
+#this may be obsolete with the addition of google stuff
+#but I'll keep it here for now
 def read_search_results(search_results_url,br):
         """
         read a page containing recipe search results and extract the link to
@@ -124,10 +145,8 @@ def read_recipe_pages(results_list,br,query):
         output: dictionary of dictionaries of info for each recipe
         """
         info = dict()
-        count=1
-        for url in results_list:
-                print 'Reading recipe '+str(count)+' of '+str(len(results_list))
-                count+=1
+        for count, url in enumerate(results_list):
+                print 'Reading recipe '+str(count+1)+' of '+str(len(results_list))
 		print 'URL: ' + url
                 info[str(url)] = read_recipe_page(url,br)
                 info[str(url)]['query'] = query
