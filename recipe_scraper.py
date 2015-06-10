@@ -3,6 +3,7 @@ import cookielib
 from bs4 import BeautifulSoup
 import re
 import os
+import math
 import sqlite3
 import sys
 import numpy
@@ -11,40 +12,13 @@ import csv
 import allrecipes
 import ingredient_parse
 import google_search
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver import ActionChains
+import timer
 
 MAX_SEARCH_ENTRIES = 500
 
-class timer:
-	"""this class creates a timer object
-	that can be used to determine how frequently to scan something"""
-	def generate_random_time(self):
-		return self.floor + min(numpy.random.lognormal(self.mean,self.sd,1)[0],self.ceiling)
-	def __init__(self,mean = 0.976,sd = 0.29,floor = 0.704014,ceiling = 4.307):
-		self.origin = time.time()
-		self.floor = floor
-		self.mean = mean
-		self.sd = sd
-		self.ceiling = ceiling
-		self.prev_time = self.origin
-		self.next_counter = self.generate_random_time()
-		self.nresets = 0
-	def reset_time(self):
-		self.prev_time = time.time()
-		self.next_counter = self.generate_random_time()
-	def check_time(self):
-		"""this should be the only function used when
-		running this normally"""
-		if time.time() - self.next_counter > self.prev_time:
-			self.reset_time()
-			self.nresets += 1
-			return True
-		else:
-			return False
-	def get_number_resets(self):
-		return self.nresets
-	def get_time_remaining(self):
-		return self.prev_time + self.next_counter - time.time()
-	
 def main(args):
 	#these will be default until command-line arguments are supported
 	query = 'chicken'
@@ -54,19 +28,11 @@ def main(args):
         #create browser
 	br=create_browser()
 	
-	gs = google_search.google_search(website,query,br)
-	#slower timer because google actually detects bots more easily
-	main_timer = timer(mean = 3.23,sd = 0.63, floor = 18.12, ceiling = 62)
-	results_list = []
-	while True:
-		results_list.append(gs.get_current_entry())
-		if gs.at_page_limit():
-			gs.get_info()
-			while main_timer.check_time():
-				pass
-			print 'continuing...'
-		if not gs.can_continue() or len(results_list) == MAX_SEARCH_ENTRIES:
-			break
+	gs = google_search.google_search(website,query,200)
+	
+	gs.loop_until_complete()
+	results_list = gs.results_list
+	results_list = [x for x in results_list if allrecipes.validate_url(x)]
         #get list of recipe url's from search results
         if False:
 		results_list = read_search_results(search_results_url,br)
@@ -244,7 +210,6 @@ def write_info_to_database(info):
 	print "TOTAL INGREDIENTS: " + str(ningredients)
 	c.close()
 	conn.close()
-
 
 if __name__=='__main__':
 	main(sys.argv[1:])

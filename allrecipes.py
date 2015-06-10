@@ -38,6 +38,10 @@ def generate_ingredients_dict(soup):
 
                 #this is an index value used by allrecipes.com for each ingredient
                 ingredient_index = int(obj.get('data-ingredientid'))
+                #happens if there are multiple groups of large ingredients
+                #e.g., sauces
+                if ingredient_index == "0":
+			continue
 	        description = removeNonAscii(obj.find('span',{'class':'ingredient-name'}).text)
                 amount = float(obj.get('data-grams'))
 
@@ -47,3 +51,6 @@ def generate_ingredients_dict(soup):
                 ingredients[ingredient_index] = ingredient
 	
         return ingredients
+
+def validate_url(url):
+	return re.search('/recipe/[^/]+/$',url) <> None
