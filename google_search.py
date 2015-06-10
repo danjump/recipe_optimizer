@@ -72,6 +72,7 @@ class google_search:
 			self.page_number += 1
 			if self.page_number > self.max_pages:
 				self.terminated = True
+		self.driver.quit()
 
 
 def sptp(query):
