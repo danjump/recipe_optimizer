@@ -1,25 +1,31 @@
 TODO:
 
-1. 
+1.Get Data (MOSTLY DONE)
 #COMPLETED:(no)
 *Create scraper to collect information
- a) Start with allrecipes.com
- b) Create database system with sqlite3 to store information
-    for each recipe
-    
-    PROPOSED TABLE CODE
+ DONE: scraping directly from all-recipes and google search of all recipes
+ DONE: put data in database
+ -Might need to tweak things some
 
-    CREATE TABLE recipe_website(
-    id INTEGER PRIMARY KEY,
-    rating REAL,
-    nratings INTEGER,
-    website TEXT);
-    
-    CREATE TABLE recipes(
-    id INTEGER, 
-    product TEXT, 
-    ingredient TEXT);
-    
-*Formulate model
- a) Figure out what information should be used in the model
- b) Figure out what kind of model should be tested first
+2. Clean Data (CURRENT) <--Bryan Working on this
+ a) Filter bad recipes/ingredients
+ b) parse looking for duplicate/similar ingredients (eg. garbanzo/chickpeas)
+ b) Calculate ingredient percentages from grams
+
+3. Process Data (LATER) <-- Max and Daniel are working out details of an algorithm
+*2 Main Steps:
+ a) choose ingredients
+  - idea links:
+  https://en.wikipedia.org/wiki/Cosine_similarity
+  https://en.wikipedia.org/wiki/Jaccard_index
+  https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Phylogenetic_tree.svg/450px-Phylogenetic_tree.svg.png
+  https://en.wikipedia.org/wiki/Hierarchical_clustering
+  https://en.wikipedia.org/wiki/Mahalanobis_distance
+
+ b) set amounts for ingredients
+  - idea links:
+ https://en.wikipedia.org/wiki/Elastic_net_regularization
+
+ criteria for ranking:
+ -weight of rating and number of votes
+ -transform votes to avoid popularity(eg. sqrt)
