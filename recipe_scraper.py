@@ -21,14 +21,14 @@ MAX_SEARCH_ENTRIES = 500
 
 def main(args):
 	#these will be default until command-line arguments are supported
-	query = 'chicken'
+	query = 'hummus'
 	website = 'allrecipes.com'
         #Set our allrecipes search result url. in this case we are searching for hummus recipes
         search_results_url='http://allrecipes.com/search/default.aspx?qt=k&wt='+query+'&rt=r&origin=Home%20Page'
         #create browser
 	br=create_browser()
 	
-	gs = google_search.google_search(website,query,200)
+	gs = google_search.google_search(website,query,500)
 	
 	gs.loop_until_complete()
 	results_list = gs.results_list
