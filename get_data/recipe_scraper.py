@@ -17,7 +17,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver import ActionChains
 import timer
 
-MAX_SEARCH_ENTRIES = 500
+MAX_SEARCH_ENTRIES = 1000
 
 def main(args):
 	#these will be default until command-line arguments are supported
