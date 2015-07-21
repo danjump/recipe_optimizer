@@ -28,7 +28,7 @@ def main(args):
         #create browser
 	br=create_browser()
 	
-	gs = google_search.google_search(website,query,500)
+	gs = google_search.google_search(website,query,MAX_SEARCH_ENTRIES)
 	
 	gs.loop_until_complete()
 	results_list = gs.results_list
@@ -145,7 +145,7 @@ def read_recipe_page(url,br):
 
 def write_info_to_database(info):
 	"""stores info extracted to pages to a sqlite database"""
-	conn = sqlite3.connect('recipes.db')
+	conn = sqlite3.connect('../recipes2.db')
 	c = conn.cursor()
 	c.execute("""CREATE TABLE IF NOT EXISTS recipes(
 		recipe_id INTEGER, 
