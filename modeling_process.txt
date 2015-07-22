@@ -1,0 +1,61 @@
+METHODOLOGY FOR CREATING OPTIMAL RECIPE
+
+1. DATA ACQUISITION
+
+From websites, gather information for recipes, including
+
+* recipe name (i.e., the search query)
+* each ingredient and amount (by weight)
+* final recipe amount
+* recipe rating
+* number of recipe ratings
+* website for recipe
+
+2. DATA CLEANING
+
+Perform the following steps for data cleaning:
+
+* Combine similar names of ingredients (e.g., "minced onion" and "diced onion") into one
+* Calculate the proportion of each ingredient for each recipe
+* Place data into a csv file, where the rows represent recipes and columns rating information and ingredient information
+
+3. PREPROCESSING
+
+a) Dimensionality Reduction
+* If an ingredient does not appear at least 5 times, sort it into an "other" category; this will reduce dimensionality
+
+b) Clustering
+
+Because some recipes may be vastly different than each other, performing hierarchical clustering using the Jaccard index (distance = 1-jaccard_similarity), sharp divisions in groups recipes can be detected.  Using this information, multiple models can be created in the following steps (and optimized over different criteria).
+
+4. MODEL BUILDING
+
+This step is flexible, although it works most efficiently with linear models.
+
+* Construct a response function to the ingredients based on ratings and number of ratings.  This is the value we wish to maximize.  A simple one is rating*log(number_of_ratings+1)
+* Perform a linear regression of all ingredient proportions on the response function, and store all the resulting coefficients.  
+* Perform stepwise linear regression to reduce the variance of parameters that remain in the model.  AIC should be fine for this.
+* Store all of the remaining coefficients
+
+5. CONSTRAINT CONSTRUCTION
+
+If we followed the above model, we would likely get a model that tells us to fill the recipe up with one ingredient and not use others.  This is undesirable, so we should come up with constraints for two main scenarios:
+
+1) All ingredient values should be representative of the training data.  There should be a boundary based on the highest and lowest values of an ingredient's appearance. A weighted average of the top and bottom 2.5% can be used to set this.
+2) Important ingredients that can substitute one another can get around this, so there should be a correlation analysis that will set constraints on the values of amt_x + amt_subx.  If two ingredients have a very negative correlation, then we can pair them up and come up with a constraint based on the middle 95% of the data.  If there are 3 or more variables that have mutually low correlation, then we will treat every pair the same way (although incidence of more than 1 substitute ingredient isn't very common).  The value of this anti-correlation has yet to be determined.
+
+6. LINEAR PROGRAMMING SOLUTION
+
+With the linear model and the constraints listed above, we can solve the linear programming problem:
+
+Maximize coefficients %*% proportions by adjusting proportions
+
+Given:
+
+1. sum(proportions) = 1
+2. Each proportion value is bounded by what appears in the recipe
+3. Pairs of highly anti-correlated values must sum to a value in a certain range.
+
+7. VISUALIZE AND REPORT RESULTS
+
+(add text here)
