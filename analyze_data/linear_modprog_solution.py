@@ -5,6 +5,7 @@ import sklearn
 import re
 import os
 import sys
+import math
 
 #todo:
 
@@ -14,7 +15,12 @@ import sys
 #output this new table to python
 
 def main(args):
-	data = read_data('hummus')
+	query = 'hummus'
+	yvar = extract_rating_data(query)
+	variables = data_to_mf(query,yvar)
+	yvar = variables[1]
+	xvar = variables[2]
+	print 'to be continued'
 	
 #may want to move function to other file later
 def read_data(query,cutoff = 5):
@@ -70,22 +76,71 @@ def read_data(query,cutoff = 5):
 		WHERE temptable.recipe_id > tt2.recipe_id
 		);""")
 	c.execute("""SELECT recipe_id,ingredient_id,amount,yield_quantity
-		, description, idx FROM temptable;""")
+		, description, idx FROM temptable 
+		ORDER BY recipe_id, ingredient_id;""")
 	data = c.fetchall()
 	c.close()
 	conn.close()
 	return data
+
+def extract_rating_data(query):
+	conn = sqlite3.connect('recipes.db')
+	c = conn.cursor()
+	c.execute("""CREATE TEMP TABLE qtable AS
+		SELECT average_rating, number_ratings,
+		recipe_id, yield_quantity 
+		FROM recipes
+		WHERE search_query = '%s';""" % (query))
+	c.execute("""CREATE TEMP TABLE rtable AS
+		SELECT average_rating, number_ratings, 
+		recipe_id FROM qtable;""")
+		
+	c.execute("""UPDATE rtable SET recipe_id=
+		(SELECT count(*) FROM 
+		(SELECT  recipe_id AS recipe_id
+		FROM rtable AS rt) rt2
+		WHERE rtable.recipe_id > rt2.recipe_id
+		);""")
+	c.execute("""SELECT recipe_id, number_ratings, average_rating 
+		FROM rtable ORDER BY recipe_id;""")
+	data = c.fetchall()
+	c.close()
+	conn.close()
+	return data
+
+#objective function for recipes
+def response_function(y):
+	return numpy.asarray([x[2]*math.log(1+x[1]) for x in y])
+
+def data_to_mf(data,response):
+	return create_model_frame(keep_data_numbers(data),response)
 
 def keep_data_numbers(data):
 	data = [[x[0],x[5],x[2]/x[3]] for x in data]
 	#data = numpy.asarray(data)
 	return data
 
-def create_model_frame(data):
+def create_model_frame(data,response,other_ingredient_cutoff = 0,new_column_cutoff=0):
 	k = max([x[1] for x in data])
 	N = max([x[0] for x in data])
-	new_array = numpy.zeros([N,k])
-	print "NEED TO FINISH WRITING FUNCTION"
+	
+	new_array = numpy.zeros([N+1,k+1])
+	#print "NEED TO FINISH WRITING FUNCTION"
+	for x in data:
+		new_array[x[0]][x[1]] += x[2]
+	nremoved = 0
+	#makes additional cuts if other_ingredients is too big in certain rows
+	#needs way of communicating this if labels are to be saved
+	#perhaps use class object
+	if other_ingredient_cutoff > 0:
+		cutoff1 = new_array[:,0] > other_ingredient_cutoff
+		new_array = new_array[cutoff1]
+		response = response[cutoff1]
+		cutoff2 = numpy.sum(new_array>0,axis=1)>new_column_cutoff
+		new_array = new_array[:,cutoff2]
+	print str(new_array.shape[1]) + ' different ingredients'
+	print str(new_array.shape[0]) + ' different recipes'
+	return [new_array,response]
 
 def extract_ingredient_labels(data):
 	pass
