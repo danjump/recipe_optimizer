@@ -2,6 +2,7 @@
 import sqlite3
 import scipy
 import sklearn
+from sklearn import linear_model
 import re
 import os
 import sys
@@ -18,10 +19,14 @@ def main(args):
 	query = 'hummus'
 	yvar = extract_rating_data(query)
 	variables = data_to_mf(query,yvar)
-	yvar = variables[1]
-	xvar = variables[2]
+	yvar = variables[0]
+	xvar = variables[1]
 	print 'to be continued'
+	model = sklearn.linear_model.LinearRegression()
+	model.fit(xvar,yvar)
+	params = model.coef_
 	
+
 #may want to move function to other file later
 def read_data(query,cutoff = 5):
 	"""reads in the data from the sql database
