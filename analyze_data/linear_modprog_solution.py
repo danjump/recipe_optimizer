@@ -3,10 +3,12 @@ import sqlite3
 import scipy
 import sklearn
 from sklearn import linear_model
+from sklearn.linear_model import LassoLarsIC
 import re
 import os
 import sys
 import math
+import copy
 
 #todo:
 
@@ -17,12 +19,13 @@ import math
 
 def main(args):
 	query = 'hummus'
-	yvar = extract_rating_data(query)
-	variables = data_to_mf(query,yvar)
-	yvar = variables[0]
-	xvar = variables[1]
-	print 'to be continued'
-	model = sklearn.linear_model.LinearRegression()
+	data = get_model_data(query)
+	data = apply_response_function(data)
+	xvar = data[0]
+	yvar = data[1]
+	#as long as no cuts are made to response value
+	#an intercept would be redundant since sum(proportions)=1
+	model = LassoLarsIC(criterion='aic',fit_intercept = False)
 	model.fit(xvar,yvar)
 	params = model.coef_
 	
@@ -84,9 +87,25 @@ def read_data(query,cutoff = 5):
 		, description, idx FROM temptable 
 		ORDER BY recipe_id, ingredient_id;""")
 	data = c.fetchall()
+	c.execute("""SELECT DISTINCT idx,description 
+		FROM temptable
+		WHERE idx <> 0
+		ORDER BY idx,length(description);""")
+	ilabels = c.fetchall()
+	ilabels = fix_ingredient_labels(ilabels)
 	c.close()
 	conn.close()
-	return data
+	return [data,ilabels]
+
+#very rough solution
+def fix_ingredient_labels(labels):
+	descriptions = []
+	pv = -1
+	for label in labels:
+		if label[0] <> pv:
+			descriptions.append(label[1])
+			pv = label[0]
+	return descriptions
 
 def extract_rating_data(query):
 	conn = sqlite3.connect('recipes.db')
@@ -113,19 +132,29 @@ def extract_rating_data(query):
 	conn.close()
 	return data
 
+def apply_response_function(data):
+	data[1] = response_function(data[1])
+	return data
+
 #objective function for recipes
 def response_function(y):
 	return numpy.asarray([x[2]*math.log(1+x[1]) for x in y])
 
-def data_to_mf(data,response):
-	return create_model_frame(keep_data_numbers(data),response)
+def get_model_data(query,cutoff=5,other_ingredient_cutoff=0,new_column_cutoff=0):
+	data = read_data(query,cutoff)
+	response = extract_rating_data(query)
+	return create_model_frame(data,response,query,other_ingredient_cutoff,new_column_cutoff)
 
 def keep_data_numbers(data):
 	data = [[x[0],x[5],x[2]/x[3]] for x in data]
 	#data = numpy.asarray(data)
 	return data
 
-def create_model_frame(data,response,other_ingredient_cutoff = 0,new_column_cutoff=0):
+def create_model_frame(data,response,query,other_ingredient_cutoff = 0,new_column_cutoff=0):
+	ilabels = ['OTHER'] + data[1]
+	ilabels = numpy.asarray(ilabels)
+	rlabels = numpy.asarray(extract_recipe_labels(query))
+	data = keep_data_numbers(data[0])
 	k = max([x[1] for x in data])
 	N = max([x[0] for x in data])
 	
@@ -141,19 +170,47 @@ def create_model_frame(data,response,other_ingredient_cutoff = 0,new_column_cuto
 		cutoff1 = new_array[:,0] > other_ingredient_cutoff
 		new_array = new_array[cutoff1]
 		response = response[cutoff1]
+		rlabels = rlabels[cutoff1]
 		cutoff2 = numpy.sum(new_array>0,axis=1)>new_column_cutoff
 		new_array = new_array[:,cutoff2]
+		ilabels = ilabels[cutoff2]
 	print str(new_array.shape[1]) + ' different ingredients'
 	print str(new_array.shape[0]) + ' different recipes'
-	return [new_array,response]
+	return [new_array,response,rlabels,ilabels]
 
-def extract_ingredient_labels(data):
-	pass
+def extract_recipe_from_url(url):
+	url = re.sub('^.*/Recipe/','',url)
+	url = re.sub('/.*$','',url)
+	url = re.sub('-','_',url)
+	return url
 
-#database scraping needs to be updated before this function can be used
-#currently recipe names are not used
-def extract_recipe_labels(data):
-	pass
+#currently based on URLs
+#method may need to be updated if sites other than allrecipes.com are used
+def extract_recipe_labels(query):
+	conn = sqlite3.connect('recipes.db')
+	c = conn.cursor()
+	c.execute("""CREATE TEMP TABLE qtable AS
+		SELECT 
+		recipe_id, url
+		FROM recipes
+		WHERE search_query = '%s';""" % (query))
+	c.execute("""CREATE TEMP TABLE rtable AS
+		SELECT url,
+		recipe_id FROM qtable;""")
+		
+	c.execute("""UPDATE rtable SET recipe_id=
+		(SELECT count(*) FROM 
+		(SELECT  recipe_id AS recipe_id
+		FROM rtable AS rt) rt2
+		WHERE rtable.recipe_id > rt2.recipe_id
+		);""")
+	c.execute("""SELECT url 
+		FROM rtable ORDER BY recipe_id;""")
+	data = c.fetchall()
+	data = [extract_recipe_from_url(x[0]) for x in data]
+	c.close()
+	conn.close()
+	return data
 
 if __name__=='__main__':
 	main(sys.argv[1:])
