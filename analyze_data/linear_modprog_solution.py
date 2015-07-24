@@ -216,6 +216,9 @@ def extract_recipe_labels(query):
 #this function runs the linear programming solver
 #bounds is redudnantly defined as a matrix
 def solve_linear_programming(data,model):
+	if type(data)==type([1,2,3]):
+		print 'Taking data=data[0]'
+		data = data[0]
 	eqb = construct_unit_constraints(data)
 	inb = construct_bounds_constraints(data)
 	optim = model.coef_
@@ -232,9 +235,9 @@ def bounds_by_rank_kernel(x,lk,uk):
 	rvals = -numpy.sort(-x)
 	lower = 0
 	upper = 0
-	for i,k in iter(lk):
+	for i,k in enumerate(lk):
 		lower+=vals[i]*k
-	for i,k in iter(uk):
+	for i,k in enumerate(uk):
 		upper+=rvals[i]*k
 	return [lower,upper]
 
@@ -242,7 +245,7 @@ def construct_bounds_constraints(x,lower_weights = [0.1,0.3,0.4,0.2],
 				 upper_weights=[0.1,0.3,0.4,0.2]):
 	#get bounds
 	bounds = []
-	for i in range(x.shape[2]):
+	for i in range(x.shape[1]):
 		bounds.append(bounds_by_rank_kernel(x[:,i],lower_weights,
 				      upper_weights))
 	return bounds
@@ -254,13 +257,25 @@ def construct_bounds_constraints(x,lower_weights = [0.1,0.3,0.4,0.2],
 	#uvals = numpy.asarray([a[1] for a in bounds])
 	#return [numpy.row_stack((lmatrix,umatrix)),numpy.concatenate(
 	#	(lvals,uvals))]
+	
+def require_ingredient_bounds(data,ingredient_name,bounds):
+	col_index = list(data[3]).index(ingredient_name)
+	keep_lower = data[0][:,col_index] >= bounds[0]
+	keep_upper = data[0][:,col_index] <= bounds[1]
+	keep = keep_lower & keep_upper
+	data[0] = data[0][keep,:]
+	data[1] = data[1][keep]
+	data[2] = data[2][keep]
+	print "Data is now at " + str(data[0].shape[0]) + ' rows'
+	return data
+	
 
 def construct_substitute_ingredient_constraints(data,maxcor = -0.5):
 	pass
 
 def construct_unit_constraints(data):
 	dims = data.shape
-	return [numpy.ones([dims[2],1]),[1]]
+	return [numpy.ones([1,dims[1]]),[1]]
 
 if __name__=='__main__':
 	main(sys.argv[1:])
