@@ -2,6 +2,7 @@
 import sqlite3
 import scipy
 import sklearn
+import numpy
 from sklearn import linear_model
 from sklearn.linear_model import LassoLarsIC
 import re
@@ -211,6 +212,55 @@ def extract_recipe_labels(query):
 	c.close()
 	conn.close()
 	return data
+
+#this function runs the linear programming solver
+#bounds is redudnantly defined as a matrix
+def solve_linear_programming(data,model):
+	eqb = construct_unit_constraints(data)
+	inb = construct_bounds_constraints(data)
+	optim = model.coef_
+	#I'm currently having issues updating scipy, so I
+	#haven't tested this yet
+	lp = scipy.optimize.linprog(optim,A_eq=eqb[0],b_eq = eqb[1],bounds = 
+	      inb)
+	return lp
+
+#these functions are used for constructing constraints
+
+def bounds_by_rank_kernel(x,lk,uk):
+	vals = numpy.sort(x)
+	rvals = -numpy.sort(-x)
+	lower = 0
+	upper = 0
+	for i,k in iter(lk):
+		lower+=vals[i]*k
+	for i,k in iter(uk):
+		upper+=rvals[i]*k
+	return [lower,upper]
+
+def construct_bounds_constraints(x,lower_weights = [0.1,0.3,0.4,0.2],
+				 upper_weights=[0.1,0.3,0.4,0.2]):
+	#get bounds
+	bounds = []
+	for i in range(x.shape[2]):
+		bounds.append(bounds_by_rank_kernel(x[:,i],lower_weights,
+				      upper_weights))
+	return bounds
+	#K = len(bounds)
+	#create matrices
+	#lmatrix = -numpy.identity(K)
+	#umatrix = numpy.identity(K)
+	#lvals = numpy.asarray([a[0] for a in bounds])
+	#uvals = numpy.asarray([a[1] for a in bounds])
+	#return [numpy.row_stack((lmatrix,umatrix)),numpy.concatenate(
+	#	(lvals,uvals))]
+
+def construct_substitute_ingredient_constraints(data,maxcor = -0.5):
+	pass
+
+def construct_unit_constraints(data):
+	dims = data.shape
+	return [numpy.ones([dims[2],1]),[1]]
 
 if __name__=='__main__':
 	main(sys.argv[1:])
