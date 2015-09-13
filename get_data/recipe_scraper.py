@@ -57,7 +57,8 @@ def create_browser():
 	br.set_cookiejar(cj)
 	br.set_handle_equiv(True)
 	br.set_handle_gzip(True)
-	br.set_handle_redirect(True)
+	#temporarily changed to False due to unwanted mobile redirection
+	br.set_handle_redirect(False)
 	br.set_handle_referer(True)
 	br.set_handle_robots(False)
 	#debug messages if desired
@@ -66,7 +67,6 @@ def create_browser():
 	br.set_debug_responses(False)
 	#adding user agent...this is kind of shady
 	br.addheaders=[('User-agent',user_agent)]
-	
 	return br
 
 
