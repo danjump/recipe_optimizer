@@ -51,7 +51,7 @@ class recipe.recipe(allrecipes):
 			ingredient_index = int(obj.get('data-ingredientid'))
 			#happens if there are multiple groups of large ingredients
 			#e.g., sauces, general components
-			if ingredient_index == "0":
+			if ingredient_index == 0:
 				continue
 			description = removeNonAscii(obj.find('span',{'class':'ingredient-name'}).text)
 			grams = float(obj.get('data-grams'))
@@ -98,8 +98,8 @@ class recipe.recipe(allrecipes):
 		if re.search('\?sitepref=ar',self.url) == None:
 			self.url += '?sitepref=ar'
 	
-class allrecipesQuery:
-	
+class query(allrecipesQuery):
+	pass
 
 
 #supporter functions
