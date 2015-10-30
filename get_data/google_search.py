@@ -228,7 +228,7 @@ def perform_mass_scraping(sitelist,querylist,max_results,chainlist,validation_fu
 	if chainlist = None:
 		chainlist = [make_basic_chain_elements('p','text',None,True) for i in range(len(sitelist))]
 	i = 0
-	new_timer = timer()
+	new_timer = timer.timer()
 	for site in sitelist:
 		for query in querylist:
 			engine = google_search(site,query,max_results)
