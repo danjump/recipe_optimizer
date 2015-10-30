@@ -4,6 +4,10 @@ import time
 from recipe import *
 from query import *
 
+#NOTE: the website has currently been updated and weight information is missing
+#I don't think that this project can be continued without a density database
+#for all ingredients, as that information is no longer available on the website
+
 class recipe.recipe(allrecipes):
 	def generate_data(self):
 		self.fix_url()
@@ -98,8 +102,19 @@ class recipe.recipe(allrecipes):
 		if re.search('\?sitepref=ar',self.url) == None:
 			self.url += '?sitepref=ar'
 	
-class query(allrecipesQuery):
-	pass
+class query.query(allrecipesQuery):
+	def start(self):
+		self.default_url = 'http://allrecipes.com/search/default.aspx?sitepref=ar?qt=k&wt='+self.query+'&rt=r&origin=Home%20Page'
+		self.browser.open(self.default_url)
+		self.started = True
+	def check_if_finished(self):
+		pass
+	def next_page(self):
+		self.current_page += 1
+		self.url = self.default_url + '&Page=' + self.current_page
+		self.browser.open(self.url)
+	def get_urls(self):
+		pass
 
 
 #supporter functions
